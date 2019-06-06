@@ -4,7 +4,7 @@ Final goal is to develop Android app for chess available in the Google Play Stor
  - Play across multiple devices using the Android Bluetooth APIs
  - Allow multiple modes of play including four interconnected devices for bughouse chess
  - Fill in any other functionality that most chess apps don't currently deliver
- - A computer
+ - A chess computer using alpha-beta pruning
  - Benefits provided: no need to hand device back and forth, more modes of play, no WiFi connection needed (Chess.com)
  
 Current development status:
