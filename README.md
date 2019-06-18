@@ -16,3 +16,7 @@ Next steps:
  - Create GUI through Android Studio and XML
  - Complete boolean "move" method for each piece to determine the legality of the attempted move
  - Find APIs that fill in for other normal chess app functionalities (opening database, analytics, ratings)
+
+Sources and Credits:
+ - Chess piece graphics are used under the Creative Commons CC0 License from Wikimedia.org
+ - Windows Command Prompt chess pieces are designed by Luke Chen
