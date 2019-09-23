@@ -2,7 +2,7 @@ Object oriented approach to chess
 
 Final goal is to develop Android app for chess available in the Google Play Store. Its functionalities will include:
  - Play across multiple devices using the Android Bluetooth APIs
- - Allow multiple modes of play including four interconnected devices for bughouse chess
+ - Allow multiple modes of play including four interconnected devices for bughouse chess, Drop Chess (a piece respawns every 10 moves)
  - Fill in any other functionality that most chess apps don't currently deliver
  - A chess computer using alpha-beta pruning
  - Benefits provided: no need to hand device back and forth, more modes of play, no WiFi connection needed (Chess.com)
