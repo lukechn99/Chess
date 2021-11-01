@@ -6,6 +6,11 @@ class Evaluator:
         self.initialize()
 
     def initialize(self, state="blank"):
+        '''
+        This method is called by the __init__ function. It will populate the event_map
+        with each possible coordinate and an empty array to store actions at those
+        coordinates. 
+        '''
         for letter in range(65, 91):
             for num in range(1, 8):
                 coord = chr(letter) + str(num)
