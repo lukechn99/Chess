@@ -148,7 +148,7 @@ class CaptureEvaluator(Evaluator):
       if board.is_capture(move):                              # if a capture is possible, search up what piece would be captured
         captured = board.remove_piece_at(move.to_square)      # removes and returns piece
         if captured:
-          value = self.piecevalues[captured.symbol()] * 0.5   # record what the piece is and alter board_value
+          value = self.piecevalues[captured.symbol()] * -1    # record what the piece is and alter board_value
           board_value += value
         board.set_piece_at(move.to_square, captured)          # replace piece back in its place
     return board_value
@@ -188,7 +188,7 @@ class PositionalEvaluator(Evaluator):
         else:
           # determine piece and value
           piece_value = self.piecevalues[pos]
-          positional_weight = self.piece_square_tables[pos][r][c] * self.piece_square_tables_dampening
+          positional_weight = self.piece_square_tables[pos][r][c] * self.piece_square_tables_dampening * 1 if board.turn else -1
           board_value += piece_value * positional_weight
           c += 1
 
