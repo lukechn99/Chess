@@ -55,60 +55,22 @@ class Evaluator:
               [-20,-30,-30,-40,-40,-30,-30,-20],
               [-10,-20,-20,-20,-20,-20,-20,-10],
               [20, 20,  0,  0,  0,  0, 20, 20],
-              [20, 30, 10,  0,  0, 10, 30, 20]], 
-        "p": [[0,  0,  0,  0,  0,  0,  0,  0],
-              [5, 10, 10,-20,-20, 10, 10,  5],
-              [5, -5,-10,  0,  0,-10, -5,  5],
-              [0,  0,  0, 20, 20,  0,  0,  0],
-              [5,  5, 10, 25, 25, 10,  5,  5],
-              [10, 10, 20, 30, 30, 20, 10, 10],
-              [50, 50, 50, 50, 50, 50, 50, 50],
-              [0,  0,  0,  0,  0,  0,  0,  0]], 
-        "n": [[-50,-40,-30,-30,-30,-30,-40,-50],
-              [-40,-20,  0,  0,  0,  0,-20,-40],
-              [-30,  0, 10, 15, 15, 10,  0,-30],
-              [-30,  5, 15, 20, 20, 15,  5,-30],
-              [-30,  0, 15, 20, 20, 15,  0,-30],
-              [-30,  5, 10, 15, 15, 10,  5,-30],
-              [-40,-20,  0,  5,  5,  0,-20,-40],
-              [-50,-40,-30,-30,-30,-30,-40,-50]],
-        "b": [[-20,-10,-10,-10,-10,-10,-10,-20],
-              [-10,  5,  0,  0,  0,  0,  5,-10],
-              [-10, 10, 10, 10, 10, 10, 10,-10],
-              [-10,  0, 10, 10, 10, 10,  0,-10],
-              [-10,  5,  5, 10, 10,  5,  5,-10],
-              [-10,  0,  5, 10, 10,  5,  0,-10],
-              [-10,  0,  0,  0,  0,  0,  0,-10],
-              [-20,-10,-10,-10,-10,-10,-10,-20]], 
-        "r": [[0,  0,  0,  5,  5,  0,  0,  0],
-              [-5,  0,  0,  0,  0,  0,  0, -5],
-              [-5,  0,  0,  0,  0,  0,  0, -5],
-              [-5,  0,  0,  0,  0,  0,  0, -5],
-              [-5,  0,  0,  0,  0,  0,  0, -5],
-              [-5,  0,  0,  0,  0,  0,  0, -5],
-              [5, 10, 10, 10, 10, 10, 10,  5],
-              [0,  0,  0,  0,  0,  0,  0,  0]], 
-        "q": [[-20,-10,-10, -5, -5,-10,-10,-20],
-              [-10,  0,  5,  0,  0,  0,  0,-10],
-              [-10,  5,  5,  5,  5,  5,  0,-10],
-              [0,  0,  5,  5,  5,  5,  0, -5],
-              [-5,  0,  5,  5,  5,  5,  0, -5],
-              [-10,  0,  5,  5,  5,  5,  0,-10],
-              [-10,  0,  0,  0,  0,  0,  0,-10],
-              [-20,-10,-10, -5, -5,-10,-10,-20]], 
-        "k": [[20, 30, 10,  0,  0, 10, 30, 20],
-              [20, 20,  0,  0,  0,  0, 20, 20],
-              [-10,-20,-20,-20,-20,-20,-20,-10],
-              [-20,-30,-30,-40,-40,-30,-30,-20],
-              [-30,-40,-40,-50,-50,-40,-40,-30],
-              [-30,-40,-40,-50,-50,-40,-40,-30],
-              [-30,-40,-40,-50,-50,-40,-40,-30],
-              [-30,-40,-40,-50,-50,-40,-40,-30]]
+              [20, 30, 10,  0,  0, 10, 30, 20]]
     }
+    black_pieces = ["p", "n", "b", "r", "q", "k"]
+    for piece in black_pieces:
+      white_piece_square_table = self.piece_square_tables[piece.upper()]
+      black_piece_square_table = []
+      for row in range(len(white_piece_square_table)-1, -1, -1):
+        black_row = []
+        for i in range(len(white_piece_square_table[0])-1, -1, -1):
+          black_row.append(white_piece_square_table[row][i] * -1)
+        black_piece_square_table.append(black_row)
+      self.piece_square_tables[piece] = black_piece_square_table
 
     # the values given by established chess tables seem too high, dampening
     # will take the influence of position down a notch
-    self.piece_square_tables_dampening = 0.1
+    self.piece_square_tables_dampening = 0.01
 
   def evaluate(self, board):
     '''
@@ -148,7 +110,7 @@ class CaptureEvaluator(Evaluator):
       if board.is_capture(move):                              # if a capture is possible, search up what piece would be captured
         captured = board.remove_piece_at(move.to_square)      # removes and returns piece
         if captured:
-          value = self.piecevalues[captured.symbol()] * -1    # record what the piece is and alter board_value
+          value = self.piecevalues[captured.symbol()] * -0.1    # record what the piece is and alter board_value
           board_value += value
         board.set_piece_at(move.to_square, captured)          # replace piece back in its place
     return board_value
@@ -198,9 +160,16 @@ class CombinedEvaluator(Evaluator):
   def __init__(self):
     super().__init__()
     self.evaluators = [CaptureEvaluator(), PointwiseEvaluator(), PositionalEvaluator(), CheckOpportunityEvaluator()]
+    self.evaluator_weights = [0.5, 1.5, 0.1, 2]
+
+  def _sigmoid_standardization(self, value):
+    '''
+    constrains a evaluation to a sigmoid for more even comparison
+    '''
+    return 1 / (1 + math.exp(-value))
 
   def evaluate(self, board):
     board_value = 0
-    for e in self.evaluators:
-      board_value += e.evaluate(board)
+    for i, e in enumerate(self.evaluators):
+      board_value += self._sigmoid_standardization(e.evaluate(board)) * self.evaluator_weights[i]
     return board_value
