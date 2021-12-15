@@ -72,6 +72,9 @@ class Evaluator:
     # will take the influence of position down a notch
     self.piece_square_tables_dampening = 0.01
 
+  def __str__(self):
+    return "Evaluator"
+
   def evaluate(self, board):
     '''
     given a board, returns the signed float value of the board
@@ -86,6 +89,9 @@ class CheckOpportunityEvaluator(Evaluator):
   def __init__(self):
     super().__init__()
 
+  def __str__(self):
+    return "CheckOpportunityEvaluator"
+
   def evaluate(self, board):
     board_value = 0
     for move in board.legal_moves:
@@ -93,8 +99,26 @@ class CheckOpportunityEvaluator(Evaluator):
       board_instance.push(move)
       if board.is_check:
         board_value += 1 if board.turn else -1
-      elif board.is_checkmate:
-        board_value += float('inf') if board.turn else float('-inf') 
+    return board_value
+
+class CheckmateOpportunityEvaluator(Evaluator):
+  '''
+  Gives some weight towards putting the opponent in check and gives huge value 
+  to putting opponent in checkmate
+  '''
+  def __init__(self):
+    super().__init__()
+
+  def __str__(self):
+    return "CheckOpportunityEvaluator"
+
+  def evaluate(self, board):
+    board_value = 0
+    for move in board.legal_moves:
+      board_instance = deepcopy(board)
+      board_instance.push(move)
+      if board.is_checkmate:
+        board_value += float('-inf') if board.turn else float('inf') 
     return board_value
 
 class CaptureEvaluator(Evaluator):
@@ -104,13 +128,17 @@ class CaptureEvaluator(Evaluator):
   def __init__(self):
     super().__init__()
 
+  def __str__(self):
+    return "CaptureEvaluator"
+
   def evaluate(self, board):
     board_value = 0
     for move in board.legal_moves:
       if board.is_capture(move):                              # if a capture is possible, search up what piece would be captured
         captured = board.remove_piece_at(move.to_square)      # removes and returns piece
         if captured:
-          value = self.piecevalues[captured.symbol()] * -0.1    # record what the piece is and alter board_value
+          value = self.piecevalues[captured.symbol()] * -1    # record what the piece is and alter board_value
+          # print(captured.symbol())
           board_value += value
         board.set_piece_at(move.to_square, captured)          # replace piece back in its place
     return board_value
@@ -121,6 +149,9 @@ class PointwiseEvaluator(Evaluator):
   '''
   def __init__(self):
     super().__init__()
+
+  def __str__(self):
+    return "PointwiseEvaluator"
 
   def evaluate(self, board):
     board_value = 0
@@ -139,6 +170,9 @@ class PositionalEvaluator(Evaluator):
   def __init__(self):
     super().__init__()
 
+  def __str__(self):
+    return "PositionalEvaluator"
+
   def evaluate(self, board):
     board_value = 0
     board_rows = board.board_fen().split("/")
@@ -156,11 +190,27 @@ class PositionalEvaluator(Evaluator):
 
     return board_value
 
-class CombinedEvaluator(Evaluator):
+class PatternEvaluator(Evaluator):
   def __init__(self):
     super().__init__()
-    self.evaluators = [CaptureEvaluator(), PointwiseEvaluator(), PositionalEvaluator(), CheckOpportunityEvaluator()]
-    self.evaluator_weights = [0.5, 1.5, 0.1, 2]
+
+  def __str__(self):
+    return "PatternEvaluator"
+
+  def evaluate(self, board):
+    if board.is_stalemate() or board.is_seventyfive_moves() or board.is_fivefold_repetition() or board.can_claim_fifty_moves() or board.can_claim_threefold_repetition():
+      # if on white's turn, there is a draw, then black should not have made the previous move
+      return (1 if board.turn else -1)
+    return 0
+
+class EnsembleEvaluator(Evaluator):
+  def __init__(self):
+    super().__init__()
+    self.evaluators = [CaptureEvaluator(), PointwiseEvaluator(), PositionalEvaluator(), CheckOpportunityEvaluator(), CheckmateOpportunityEvaluator(), PatternEvaluator()]
+    self.evaluator_weights = [0.5, 3, 0.1, 1, 4, 2] # [0.5, 3, 0.1, 1, 4, 2]
+
+  def __str__(self):
+    return "EnsembleEvaluator"
 
   def _sigmoid_standardization(self, value):
     '''
@@ -172,4 +222,26 @@ class CombinedEvaluator(Evaluator):
     board_value = 0
     for i, e in enumerate(self.evaluators):
       board_value += self._sigmoid_standardization(e.evaluate(board)) * self.evaluator_weights[i]
+    return board_value
+
+class RandomEnsembleEvaluator(EnsembleEvaluator):
+  '''
+  Randomly choose to exclude an evaluator
+  '''
+  def __init__(self):
+    super().__init__()
+    self.name = "RandomEnsembleEvaluator"
+
+  def __str__(self):
+    return self.name
+
+  def evaluate(self, board):
+    self.name = "RandomEnsembleEvaluator"
+    board_value = 0
+    for i in range(len(self.evaluators) - 1):
+      pick = random.randint(0, len(self.evaluators) - 1)
+      random_evaluator = self.evaluators[pick]
+      random_evaluator_weight = self.evaluator_weights[pick]
+      self.name += ", " + str(random_evaluator)
+      board_value += self._sigmoid_standardization(random_evaluator.evaluate(board)) * random_evaluator_weight
     return board_value

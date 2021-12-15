@@ -22,14 +22,14 @@ def abp(board, depth, e):
             return alpha
         return alpha
   '''
-  def aux(board, depth, e, alpha, beta):
+  def explore(board, depth, e, alpha, beta):
     if not list(board.legal_moves) or depth == 0:
       return e.evaluate(board)
     if board.turn:      # white's turn, maximize
       for move in board.legal_moves:
         board_instance = deepcopy(board)
         board_instance.push(move)
-        beta = min(beta, aux(board_instance, depth - 1, e, alpha, beta))
+        beta = min(beta, explore(board_instance, depth - 1, e, alpha, beta))
         if beta <= alpha:
           return beta
         return beta
@@ -37,7 +37,7 @@ def abp(board, depth, e):
       for move in board.legal_moves:
         board_instance = deepcopy(board)
         board_instance.push(move)
-        alpha = max(alpha, aux(board_instance, depth - 1, e, alpha, beta))
+        alpha = max(alpha, explore(board_instance, depth - 1, e, alpha, beta))
         if beta <= alpha:
           return alpha
         return alpha
@@ -46,7 +46,7 @@ def abp(board, depth, e):
   for move in board.legal_moves:
     board_instance = deepcopy(board)
     board_instance.push(move)
-    possible_boards.append((aux(board_instance, depth, e, float('-inf'), float('inf')), move))
+    possible_boards.append((explore(board_instance, depth, e, float('-inf'), float('inf')), move))
   return sorted(possible_boards, key=lambda tup: tup[0])[-1][1]
 
 def bfs(board, depth, e):
@@ -76,7 +76,8 @@ def bfs(board, depth, e):
 
 def bfs_with_horizon(board, depth, e):
   '''
-  given a board, examines all possible moves at a shallow depth
+  given a board, examines all possible moves at a shallow depth and then explores
+  the best moves at a deeper depth
   '''
   def explore(board, depth):
     if depth == 0:
