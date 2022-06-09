@@ -92,10 +92,7 @@ the board and this introduces uncertainty into the program. One approach was the
 ”Merlin” which took into account a dynamic score in addition to the static score calculated by other
 chess evaluators. This allowed it to consider things like passed pawns and king attacks.[Hor90]
 
-```
 Besides accounting for the nuances of chess in the opening, mid-game, endgame, and accounting for
-```
-
 the uncertainty inherent in any static evaluator, other attempts to further improve chess programs have
 included incorporating Bayesian networks and the use of genetic or evolutionary algorithms. Bayesian
 networks allowed a chess program to adapt its strategy and evaluation function to its game opponent
